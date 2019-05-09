@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/curvedata_mysql.iml" filepath="$PROJECT_DIR$/.idea/curvedata_mysql.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../ty_gddc_demo/.idea/gddc_demo.iml" filepath="$PROJECT_DIR$/../ty_gddc_demo/.idea/gddc_demo.iml" />
     </modules>
   </component>
 </project>

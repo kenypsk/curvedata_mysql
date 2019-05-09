@@ -9,9 +9,9 @@ import os
 import random
 import time
 
+from curvedata_mysql.framework.comm.file_opera import FileOpera
 from curvedata_mysql.framework.config.config_read import ConfRead
 from curvedata_mysql.framework.log.logger import Logger
-from curvedata_mysql.framework.opera.file_opera import FileOpera
 
 logger = Logger(logger="ProductSql").getlog()
 conf_read = ConfRead()

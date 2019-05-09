@@ -17,6 +17,14 @@ class FileOpera(object):
     # 配置文件读取
     base_dir = os.path.abspath(os.path.join(os.getcwd(), "..\.."))  # 相对跟路径
 
+    def create_table_name(self):
+        # list_config = conf_read.read_config_value(section_name)  # 获取配置文件值    # print(list_config)
+        # tmp_date = time.strftime("%Y%m%d%H%M%S", time.localtime(time.time()))
+        # create_table_name = "table"+'_'+"curvedata"+list_config[0]+'.sql'
+        create_table_name = "table"+'_'+"curvedata"+'.sql'
+        logger.info("【成功】已创建table表名：%s" % create_table_name)
+        return create_table_name
+
     # 4. 合并已构造单个sql脚本到完整脚本
     # 4.1 已构造完成生成的sql脚本文件的名称
     def get_out_file_name(self, section_name):

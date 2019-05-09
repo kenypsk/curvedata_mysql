@@ -1,7 +1,7 @@
 # !/usr/bin/python
 # coding: utf-8
 """
-    主站+配电项目：构造mysql的测试数据，即可直接插入mysql数据库的sql脚本文件
+    主站+配电项目：构造mysql-采集【曲线】数据，即可直接插入mysql数据库的sql脚本文件
 """
 import configparser
 import datetime
@@ -9,9 +9,9 @@ import os
 import random
 import time
 
+from curvedata_mysql.framework.comm.file_opera import FileOpera
 from curvedata_mysql.framework.config.config_read import ConfRead
 from curvedata_mysql.framework.log.logger import Logger
-from curvedata_mysql.framework.opera.file_opera import FileOpera
 
 logger = Logger(logger="ProductSql").getlog()
 conf_read = ConfRead()
@@ -53,8 +53,8 @@ class ProductSql(object):
             time_array_for_long_time = time.strptime(pk_time_for_long_time, "%Y-%m-%d %H:%M:%S")
 
             gatherTime = pk_time_for_long_time
-            freezeTime = time_stamp
-
+            freezeTime = time_value
+            # print(freezeTime)
 
             # # 拼接完整 pk 值
             # pk = pk_time + '_' + list_config[1] + '_' + list_config[2]  # print(pk)
@@ -66,7 +66,6 @@ class ProductSql(object):
             minute = int(pk_time[10:12])
             long_time = int(round(time.mktime(time_array_for_long_time) * 1000))  # print(long_time)
             day_second = int(value)   # print(day_second)
-
             biao_name = "curvedata" + str(list_config[0])
 
             # =============阀值告警==============
@@ -168,7 +167,7 @@ class ProductSql(object):
                     curveValue = c107
                 elif type == 108:
                     curveValue = c108
-                str_sql = 'insert into masterstation.' + biao_name + '(teNumber, measurePoint, gatherTime, gatherType, type, freezeTime, curveValue, hour) ' \
+                str_sql = 'insert into ' + biao_name + '(teNumber, measurePoint, gatherTime, gatherType, type, freezeTime, curveValue, hour) ' \
                           'VALUES (' + "'" + list_config[1] + "'" + "," + "'" + list_config[2] + "'" + "," + "'" + str(gatherTime) + "'" + "," + "'" + str(gatherType) + "'" + "," + "'" + str(type) + "'" + "," + "'" + str(freezeTime) + "'" + "," + "'" + str(curveValue) + "'" + "," + "'" + str(hour) + "'" + ");"
                 file_result.write(str_sql + '\n')
         print("【成功】读取构造数据：本次开始示数值 %s，本次开始日期 %s，结束示数值 %s，【切记】后续构造数据大于示数最后值。" % (now_start_value, str(list_config[0]), c101))
@@ -184,6 +183,7 @@ class ProductSql(object):
         config = configparser.ConfigParser()
         file_name = self.base_dir + self.ini_dir_file
         config.read(file_name, encoding="utf-8")  # 读取配置文件
+        # config.read(file_name)  # 读取配置文件
         date = config.get(section_name, "date")  # 获取配置文件的值
         # te_address = config.get("dataTypeKH00000140", "te_address")
         # measure_point = config.get("dataTypeKH00000140", "measure_point")
@@ -218,7 +218,7 @@ class ProductSql(object):
         # config.set(node, key5, value5)  # 修改 tenant_id 的值
         # config.set(node, key6, value6)  # 修改 customer_code 的值
         config.set(node, key7, value7)   # 修改 start_value_of_shishu 的值
-        fc = open(self.base_dir + self.ini_dir_file, "w")
+        fc = open(self.base_dir + self.ini_dir_file, "w", encoding="utf-8")
         config.write(fc)
         fc.close()
         listc = conf_read.read_config_value(section_name)

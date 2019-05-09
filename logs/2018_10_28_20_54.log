@@ -1,0 +1,46 @@
+2018-10-28 20:54:41,722 - ConfRead - INFO - 【成功】读取设置参数成功：20180410，500012345，1，00000224，00000055，KH00000140，1191，/sql/500012345_1/，/sql/hbsql/500012345_1.sql
+2018-10-28 20:54:41,723 - FileOpera - INFO - 【成功】已创建table表名：table_curvedata.sql
+2018-10-28 20:54:41,724 - ConfRead - INFO - 【成功】读取设置参数成功：CREATE TABLE `curvedata%s` (
+`teNumber` int(9) NOT NULL COMMENT '终端地址',
+`measurePoint` int(4) NOT NULL COMMENT '终端测量点号',
+`gatherTime` datetime DEFAULT NULL COMMENT '采集时间',
+`gatherType` tinyint(3) DEFAULT NULL COMMENT '采集类型',
+`type` int(4) DEFAULT NULL COMMENT '采集项',
+`freezeTime` bigint(10) DEFAULT NULL COMMENT '冻结时间',
+`curveValue` decimal(11,4) DEFAULT NULL COMMENT '值',
+`hour` tinyint(24) DEFAULT NULL COMMENT '小时',
+UNIQUE KEY `curvedataUni` (`teNumber`,`measurePoint`,`type`,`freezeTime`) USING BTREE,
+KEY `hour` (`hour`) USING BTREE) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='曲线数据';
+2018-10-28 20:54:41,724 - ConfRead - INFO - 【成功】读取设置参数成功：CREATE TABLE `nowdata%s` (
+`teNumber` int(9) NOT NULL COMMENT '终端地址',
+`measurePoint` int(4) NOT NULL COMMENT '终端测量点号',
+`gatherTime` datetime DEFAULT NULL COMMENT '采集时间',
+`gatherType` tinyint(3) DEFAULT NULL COMMENT '采集类型',
+`type` int(4) DEFAULT NULL COMMENT '采集项',
+`freezeTime` bigint(10) DEFAULT NULL COMMENT '冻结时间',
+`curveValue` decimal(11,4) DEFAULT NULL COMMENT '值',
+`feilv` int(4) DEFAULT NULL COMMENT '费率',
+`max_value` decimal(11,4) DEFAULT NULL COMMENT '最大值',
+`maxTime` varchar(256) DEFAULT NULL COMMENT '最大值发生时间',
+`hour` tinyint(24) DEFAULT NULL COMMENT '小时',
+UNIQUE KEY `curvedataUni` (`teNumber`,`measurePoint`,`type`,`freezeTime`,`feilv`) USING BTREE,
+KEY `hour` (`hour`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='曲线数据';
+2018-10-28 20:54:41,725 - CreateTable - INFO - 【成功】创建表：table_curvedata.sql
+2018-10-28 20:54:41,725 - CreateTable - INFO - 【成功】创建表：table_curvedata.sql
+2018-10-28 20:54:41,726 - ConfRead - INFO - 【成功】读取设置参数成功：20180410，500012345，1，00000224，00000055，KH00000140，1191，/sql/500012345_1/，/sql/hbsql/500012345_1.sql
+2018-10-28 20:54:41,727 - FileOpera - INFO - 【成功】已清空文件：/sql/hbsql/500012345_1.sql
+2018-10-28 20:54:41,729 - ConfRead - INFO - 【成功】读取设置参数成功：20180410，500012345，1，00000224，00000055，KH00000140，1191，/sql/500012345_1/，/sql/hbsql/500012345_1.sql
+2018-10-28 20:54:41,729 - ConfRead - INFO - 【成功】读取时间参数成功：['0\n', '900\n', '1800\n', '2700\n', '3600\n', '4500\n', '5400\n', '6300\n', '7200\n', '8100\n', '9000\n', '9900\n', '10800\n', '11700\n', '12600\n', '13500\n', '14400\n', '15300\n', '16200\n', '17100\n', '18000\n', '18900\n', '19800\n', '20700\n', '21600\n', '22500\n', '23400\n', '24300\n', '25200\n', '26100\n', '27000\n', '27900\n', '28800\n', '29700\n', '30600\n', '31500\n', '32400\n', '33300\n', '34200\n', '35100\n', '36000\n', '36900\n', '37800\n', '38700\n', '39600\n', '40500\n', '41400\n', '42300\n', '43200\n', '44100\n', '45000\n', '45900\n', '46800\n', '47700\n', '48600\n', '49500\n', '50400\n', '51300\n', '52200\n', '53100\n', '54000\n', '54900\n', '55800\n', '56700\n', '57600\n', '58500\n', '59400\n', '60300\n', '61200\n', '62100\n', '63000\n', '63900\n', '64800\n', '65700\n', '66600\n', '67500\n', '68400\n', '69300\n', '70200\n', '71100\n', '72000\n', '72900\n', '73800\n', '74700\n', '75600\n', '76500\n', '77400\n', '78300\n', '79200\n', '80100\n', '81000\n', '81900\n', '82800\n', '83700\n', '84600\n', '85500\n']
+2018-10-28 20:54:41,730 - ConfRead - INFO - 【成功】读取设置参数成功：20180410，500012345，1，00000224，00000055，KH00000140，1191，/sql/500012345_1/，/sql/hbsql/500012345_1.sql
+2018-10-28 20:54:41,730 - FileOpera - INFO - 【成功】已构造sql脚本文件名称：500012345_1_20180410_20181028205441.sql
+2018-10-28 20:54:41,757 - ProductQuXianXuLiangSql - INFO - 【成功】读取构造数据：本次开始示数值 1191，本次开始日期 20180410，结束示数值 1490，【切记】后续构造数据大于示数最后值。
+2018-10-28 20:54:41,757 - ProductQuXianXuLiangSql - INFO - 【成功】最后示数值： 1490
+2018-10-28 20:54:41,759 - ConfRead - INFO - 【成功】读取设置参数成功：20180411，500012345，1，00000224，00000055，KH00000140，1490，/sql/500012345_1/，/sql/hbsql/500012345_1.sql
+2018-10-28 20:54:41,760 - ProductQuXianXuLiangSql - INFO - 【成功】更新配置数据：最新开始示数值 1490，最新开始日期 20180411，即下一次构造数据的起始值，【切记】后续构造数据大于示数最后值
+2018-10-28 20:54:41,760 - ConfRead - INFO - 【成功】读取设置参数成功：20180411，500012345，1，00000224，00000055，KH00000140，1490，/sql/500012345_1/，/sql/hbsql/500012345_1.sql
+2018-10-28 20:54:41,761 - FileOpera - INFO - 【成功】需要合并的sql文件有：['500012345_1_20180410_20181028205441.sql']
+2018-10-28 20:54:41,773 - FileOpera - INFO - 【成功】-- 其中文件 /sql/500012345_1/500012345_1_20180410_20181028205441.sql 共：【3072】 条数据
+2018-10-28 20:54:41,778 - FileOpera - INFO - 【成功】合并文件 /sql/hbsql/500012345_1.sql 成功，合并后总共：【3072】 条数据，数量匹配正确。 
+2018-10-28 20:54:41,778 - FileOpera - INFO - 【成功】=================本次构建已完成=================
+

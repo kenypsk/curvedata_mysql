@@ -1,7 +1,7 @@
 # !/usr/bin/python
 # coding: utf-8
 """
-    主站+配电项目：构造mysql的测试数据，仅一个脚本即可
+    主站+配电项目：构造mysql-采集【曲线+需量】数据，即可直接插入mysql数据库的sql脚本文件
 """
 import configparser
 import datetime
@@ -9,52 +9,30 @@ import os
 import random
 import time
 
+from curvedata_mysql.framework.comm.file_opera import FileOpera
+from curvedata_mysql.framework.config.config_read import ConfRead
+from curvedata_mysql.framework.log.logger import Logger
 
-class ProductData(object):
+logger = Logger(logger="ProductQuXianXuLiangSql").getlog()
+conf_read = ConfRead()
+file_opera = FileOpera()
+
+
+class ProductQuXianXuLiangSql(object):
     # 配置文件读取
-    # base_dir = os.path.dirname(os.path.abspath("."))  # 跟路径
     base_dir = os.path.abspath(os.path.join(os.getcwd(), "..\.."))  # 相对跟路径
     ini_dir = "conf"
     ini_file = "product.ini"
-    parm_file = "seconds.txt"
     ini_dir_file = '\\' + ini_dir + '\\' + ini_file  # 配置文件路径
-    parm_dir_file = '\\' + ini_dir + '\\' + parm_file   # 参数文件路径
 
-    # 1. sql设备相关部分
-    # 1.1 读取配置文件
-    def read_config_value(self, section_name):
-        config = configparser.ConfigParser()
-        file_name = self.base_dir + self.ini_dir_file
-        config.read(file_name, encoding="utf-8")
-        date = config.get(section_name, "date")
-        te_address = config.get(section_name, "te_address")
-        measure_point = config.get(section_name, "measure_point")
-        collection_meter = config.get(section_name, "cm_id")
-        tenant_id = config.get(section_name, "tenant_id")
-        customer_code = config.get(section_name, "customer_code")
-        start_value = int(config.get(section_name, "start_value_of_shishu"))
-        sql_path = config.get(section_name, "sql_path")
-        hb_filename = config.get(section_name, "hb_filename")
-        return date, te_address, measure_point, collection_meter, tenant_id, customer_code, start_value, sql_path, hb_filename
-
-    # 2. sql构建数据部分
-    # 2.1 读取参数文件
-    def read_seconds_value(self):
-        file_name = self.base_dir + self.parm_dir_file
-        fp = open(file_name, 'r')   # fp = open('seconds.txt', 'r')
-        times = fp.readlines()  # 共96个时间点（24小时，每小时对应时刻 0,15,30,45）
-        fp.close()
-        return times
-
-        # 3. 构造sql数据，写入sql脚本文件
-        # 3.1 构造sql脚本
-
+    # 3. 构造sql数据，写入sql脚本文件
+    # 3.1 构造sql脚本
     def product_sql(self, section_name):
-        list_config = self.read_config_value(section_name)  # 获取配置文件值    # print(list_config)
+        list_config = conf_read.read_config_value(section_name)  # 获取配置文件值    # print(list_config)
         now_start_value = list_config[6]  # 只是为了记录当前开始示数
         sql_path = list_config[7]
-        list_second = self.read_seconds_value()  # 获取时间间隔参数文件值   # print(list_second)
-        out_file_name = self.get_out_file_name(section_name)  # 获取构建数据，会生成sql文件的名称
+        list_second = conf_read.read_times_value()  # 获取时间间隔参数文件值   # print(list_second)
+        out_file_name = file_opera.get_out_file_name(section_name)  # 获取构建数据，会生成sql文件的名称
         file_result = open(self.base_dir + sql_path + out_file_name, 'w')
         c101 = ""
         for item in list_second:
@@ -62,6 +40,8 @@ class ProductData(object):
             # freezeTime = ""
             gatherType = 1
             curveValue = ""
+            maxValue = ""
+            feilv = ""
 
             # 获取 pk 所需时间
             value = item.rstrip()
@@ -72,10 +52,12 @@ class ProductData(object):
             tmp_time = time.localtime(time_value)
             pk_time = time.strftime("%Y%m%d%H%M%S", tmp_time)
             pk_time_for_long_time = time.strftime("%Y-%m-%d %H:%M:%S", tmp_time)
+            pk_time_for_max_time = time.strftime("%m-%d %H:%M", tmp_time)
             time_array_for_long_time = time.strptime(pk_time_for_long_time, "%Y-%m-%d %H:%M:%S")
 
             gatherTime = pk_time_for_long_time
-            freezeTime = time_stamp
+            freezeTime = time_value     # print(freezeTime)
+            maxTime = pk_time_for_max_time
 
             # # 拼接完整 pk 值
             # pk = pk_time + '_' + list_config[1] + '_' + list_config[2]  # print(pk)
@@ -86,35 +68,35 @@ class ProductData(object):
             hour = int(pk_time[8:10])
             minute = int(pk_time[10:12])
             long_time = int(round(time.mktime(time_array_for_long_time) * 1000))  # print(long_time)
-            day_second = int(value)  # print(day_second)
-
+            day_second = int(value)   # print(day_second)
             biao_name = "curvedata" + str(list_config[0])
+            biao_name2 = "nowdata" + str(list_config[0])
 
-            # =============阀值告警==============
+            # =============曲线采集项==============
             # 获取数据 c77 ~ 108
             # 89-91： A、B、C相电压；正常范围（220左右浮动）
             c89 = random.randrange(210, 230)
             c90 = random.randrange(210, 230)
             c91 = random.randrange(210, 230)
             # 92-94： A、B、C相电流；正常范围（0.x）
-            c92 = random.randrange(0, 99) / 100
-            c93 = random.randrange(0, 99) / 100
-            c94 = random.randrange(0, 99) / 100
+            c92 = random.randrange(0, 99)/100
+            c93 = random.randrange(0, 99)/100
+            c94 = random.randrange(0, 99)/100
             # 77-80：总ABC相视在功率；正常范围（0.0xxx） 电压*电流
-            c77 = round(c89 * c92, 2)
-            c78 = round(c89 * c92, 2)
-            c79 = round(c90 * c93, 2)
-            c80 = round(c91 * c94, 2)
+            c77 = round(c89*c92, 2)
+            c78 = round(c89*c92, 2)
+            c79 = round(c90*c93, 2)
+            c80 = round(c91*c94, 2)
             # 81-84：总ABC相有功功率；正常范围（0.0xxx） 视在功率*90%
-            c81 = round(c89 * c92 * 0.9, 2)
-            c82 = round(c89 * c92 * 0.9, 2)
-            c83 = round(c90 * c93 * 0.9, 2)
-            c84 = round(c91 * c94 * 0.9, 2)
+            c81 = round(c89*c92*0.9, 2)
+            c82 = round(c89*c92*0.9, 2)
+            c83 = round(c90*c93*0.9, 2)
+            c84 = round(c91*c94*0.9, 2)
             # 85-88：总ABC相无功功率；正常范围（0.0xxx）视在功率*10%
-            c85 = round(c89 * c92 * 0.1, 2)
-            c86 = round(c89 * c92 * 0.1, 2)
-            c87 = round(c90 * c93 * 0.1, 2)
-            c88 = round(c91 * c94 * 0.1, 2)
+            c85 = round(c89*c92*0.1, 2)
+            c86 = round(c89*c92*0.1, 2)
+            c87 = round(c90*c93*0.1, 2)
+            c88 = round(c91*c94*0.1, 2)
             # 95-96： 零序电流/频率；正常范围（？）
             c95 = random.randrange(5, 10)
             c96 = random.randrange(45, 55)
@@ -123,17 +105,15 @@ class ProductData(object):
             c102 = list_config[6] + random.randrange(0, 1)
             c103 = list_config[6] + random.randrange(0, 2)
             c104 = list_config[6] + random.randrange(0, 1)
-            list_config = (
-            list_config[0], list_config[1], list_config[2], list_config[3], list_config[4], list_config[5],
-            max(c101, c102, c103, c104) + 2)  # 修改配置文件（元组）内（start_value）的值
+            list_config = (list_config[0], list_config[1], list_config[2], list_config[3], list_config[4], list_config[5],
+                           max(c101, c102, c103, c104) + 2)  # 修改配置文件（元组）内（start_value）的值
             # 105-108：总ABC相功率因数；正常范围（0.x）（实际终端上报百分比值0-100，页面需显示0.x，目前接口已处理入库就是0.x，所以构造数据就是0.x格式）
-            c105 = random.randrange(70, 100) / 100
-            c106 = random.randrange(20, 100) / 100
-            c107 = random.randrange(20, 100) / 100
-            c108 = random.randrange(20, 100) / 100
+            c105 = random.randrange(70, 100)/100
+            c106 = random.randrange(20, 100)/100
+            c107 = random.randrange(20, 100)/100
+            c108 = random.randrange(20, 100)/100
 
-            types = [77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 101, 102, 103, 104,
-                     105, 106, 107, 108]
+            types = [77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 101, 102, 103, 104, 105, 106, 107, 108]  # 采集项
             for type in types:
                 if type == 77:
                     curveValue = c77
@@ -191,15 +171,73 @@ class ProductData(object):
                     curveValue = c107
                 elif type == 108:
                     curveValue = c108
-                str_sql = 'insert into masterstation2.' + biao_name + '(teNumber, measurePoint, gatherTime, gatherType, type, freezeTime, curveValue, hour) VALUES (' + "'" + list_config[1] \
-                          + "'" + "," + "'" + list_config[2] + "'" + "," + "'" + str(gatherTime) + "'" + "," + "'" + str(gatherType) + "'" + "," + "'" + str(type) \
-                          + "'" + "," + "'" + str(freezeTime) + "'" + "," + "'" + str(curveValue) + "'" + "," + "'" + str(hour) + "'" + ");"
+                str_sql = 'insert into ' + biao_name + '(teNumber, measurePoint, gatherTime, gatherType, type, freezeTime, curveValue, hour) ' \
+                          'VALUES (' + "'" + list_config[1] + "'" + "," + "'" + list_config[2] + "'" + "," + "'" + str(gatherTime) + "'" + "," + "'" + str(gatherType) + "'" + "," + "'" + str(type) + "'" + "," + "'" + str(freezeTime) + "'" + "," + "'" + str(curveValue) + "'" + "," + "'" + str(hour) + "'" + ");"
                 file_result.write(str_sql + '\n')
+
+            # =============需量项==============
+            # 35： 需量（一个时间段一般15分钟的平均功率）；正常范围（真实场景：需量值{变压器额定容量的40%-80%}，最大高峰期某个月超过120%这种）
+            curve_value2 = random.randrange(100, 150)
+            c35__99 = random.randrange(400, 800)
+            c35__1 = random.randrange(400, 800)
+            c35_1 = random.randrange(400, 800)
+            c35_0 = random.randrange(400, 800)
+
+            types2 = [35]  # 需量项
+            feilvs = [-99, -1, 1, 0]  # 费率
+            for type2 in types2:
+                if type2 == 35:
+                    for fei in feilvs:
+                        if fei == -99:
+                            feilv = -99
+                            maxValue = c35__99
+                        if fei == -1:
+                            feilv = -1
+                            maxValue = c35__1
+                        if fei == 1:
+                            feilv = 1
+                            maxValue = c35_1
+                        if fei == 0:
+                            feilv = 0
+                            maxValue = c35_0
+                        str_sql2 = 'insert into ' + biao_name2 + '(teNumber, measurePoint, gatherTime, gatherType, type, freezeTime, curveValue, feilv, `max_value`, maxTime, hour) ' \
+                                                                                 'VALUES (' + "'" + list_config[
+                                          1] + "'" + "," + "'" + list_config[2] + "'" + "," + "'" + str(
+                                gatherTime) + "'" + "," + "'" + str(gatherType) + "'" + "," + "'" + str(
+                                type2) + "'" + "," + "'" + str(freezeTime) + "'" + "," + "'" + str(curve_value2) \
+                                      + "'" + "," + "'" + str(feilv) + "'" + "," + "'" + str(
+                                maxValue) + "'" + "," + "'" + str(maxTime) + "'" + "," + "'" + str(hour) + "'" + ");"
+                        file_result.write(str_sql2 + '\n')
+
+
+            # types = [35]  # 需量项
+            # # feilvs = [-99, -1, 1, 0]  # 费率
+            # for type in types:
+            #     if type == 35:
+            #         for fei in feilvs:
+            #             if fei == -99:
+            #                 feilv = -99
+            #                 maxValue = c35__99
+            #             if fei == -1:
+            #                 feilv = -1
+            #                 maxValue = c35__1
+            #             if fei == 1:
+            #                 feilv = 1
+            #                 maxValue = c35_1
+            #             if fei == 0:
+            #                 feilv = 0
+            #                 maxValue = c35_0
+            #             str_sql = 'insert into masterstation.' + biao_name + '(teNumber, measurePoint, gatherTime, gatherType, type, freezeTime, curveValue, feilv, `maxValue`, maxTime, hour) ' \
+            #                                                                   'VALUES (' + "'" + list_config[1] + "'" + "," + "'" + list_config[2] + "'" + "," + "'" + str(
+            #                 gatherTime) + "'" + "," + "'" + str(gatherType) + "'" + "," + "'" + str(type) + "'" + "," + "'" + str(freezeTime) + "'" + "," + "'" + str(curveValue) \
+            #                       + "'" + "," + "'" + str(feilv) + "'" + "," + "'" + str(maxValue) + "'" + "," + "'" + str(maxTime) + "'" + "," + "'" + str(hour) + "'" + ");"
+            #             file_result.write(str_sql + '\n')
+
         print("【成功】读取构造数据：本次开始示数值 %s，本次开始日期 %s，结束示数值 %s，【切记】后续构造数据大于示数最后值。" % (now_start_value, str(list_config[0]), c101))
+        logger.info("【成功】读取构造数据：本次开始示数值 %s，本次开始日期 %s，结束示数值 %s，【切记】后续构造数据大于示数最后值。" % (now_start_value, str(list_config[0]), c101))
         last_value = c101
-        # print(last_value)
         file_result.close()
-        print("【成功】最后示数值： %s" % last_value)
+        logger.info("【成功】最后示数值： %s" % last_value)
         return last_value
 
     # 3.2 构造sql脚本，后续工作 【更新配置文件的值，为下一次构造数据做准备】
@@ -208,6 +246,7 @@ class ProductData(object):
         config = configparser.ConfigParser()
         file_name = self.base_dir + self.ini_dir_file
         config.read(file_name, encoding="utf-8")  # 读取配置文件
+        # config.read(file_name)  # 读取配置文件
         date = config.get(section_name, "date")  # 获取配置文件的值
         # te_address = config.get("dataTypeKH00000140", "te_address")
         # measure_point = config.get("dataTypeKH00000140", "measure_point")
@@ -245,65 +284,6 @@ class ProductData(object):
         fc = open(self.base_dir + self.ini_dir_file, "w", encoding="utf-8")
         config.write(fc)
         fc.close()
-        listc = self.read_config_value(section_name)
-        print("配置更新：开始示数值 %s ，开始日期 %s ,即下一次构造数据的起始值" % (last_value, listc[0]))
-
-    # 3.3 获取已构造sql脚本，已生成sql文件的名称
-    def get_out_file_name(self, section_name):
-        list_config = self.read_config_value(section_name)  # 获取配置文件值    # print(list_config)
-        tmp_date = time.strftime("%Y%m%d%H%M%S", time.localtime(time.time()))
-        out_file_name = list_config[1]+'_'+list_config[2]+'_'+tmp_date+'_'+list_config[0]+'.sql'
-        return out_file_name
-
-    # 4. 合并已构造单个sql脚本到完整脚本
-    # 4.1 # 合并前先清空文件
-    def clear_file_content(self, section_name):
-        list_config = self.read_config_value(section_name)  # 获取配置文件值    # print(listconfig)
-        hb_filename = list_config[8]
-        fw = open(self.base_dir + hb_filename, 'w', encoding="utf-8")
-        fw.truncate()
-        fw.close()
-
-    # 4.2 获取需要合并的目录下所有的.sql类型的文件名
-    def get_all_file_name(self, file_dir):
-        file_list = []
-        for root, dirs, files in os.walk(file_dir):
-            for file in files:
-                if os.path.splitext(file)[1] == '.sql':
-                    file_list.append(os.path.join(file))
-        return file_list
-
-    # 4.3 多文件合并
-    def filecontent_add(self, section_name):
-        count_fall = 0
-        list_config = self.read_config_value(section_name)  # 获取配置文件值    # print(listconfig)
-        sql_path = list_config[7]
-        hb_filename = list_config[8]
-        list_file_name = self.get_all_file_name(self.base_dir + sql_path)  # print(listname[0],listname[1]...)    # 文件名分别为listname2[0]...
-        for file in list_file_name:
-            if file != hb_filename:
-                fr = open(self.base_dir + sql_path + file, 'r', encoding="utf-8")
-                fw = open(self.base_dir + hb_filename, 'a', encoding="utf-8")  # 写入文件,其中第一个文件默认设置为输出文件
-                fw.write(fr.read())  # 多合并到一个文件中
-                count_file = len(open(self.base_dir + sql_path + file, 'rU').readlines())  # 统计文件行数
-                print(count_file)
-                count_fall += count_file   # print(countf1, "+", countf2, "=", countfall)
-                fr.close()
-                fw.close()   # print(countfall)
-        # 检查合并文件的正确性
-        ffw = open(self.base_dir + hb_filename, encoding="utf-8")
-        count_out = len(open(self.base_dir + hb_filename, 'r', encoding="utf-8").readlines())
-        if count_fall == count_out:
-            print("合并文件成功,且数量匹配正确，共" + str(count_out) + "条数据，路径 %s " % hb_filename )
-        # data = ffw.read()    # print(data)
-        ffw.close()
-
-
-if __name__ == '__main__':
-    pd = ProductData()
-    print("=================开始构造sql数据===========================")
-    section_name = "dataType_926001000_1"  # 监管单位A - 用电企业A1 - A11变电站 - A11变电站终端一 - A11变电站主表1（主） - 926001000_1
-    pd.clear_file_content(section_name)
-    pd.update_config_value(section_name)
-    pd.filecontent_add(section_name)
-    print("=================结束构造sql数据===========================")
+        listc = conf_read.read_config_value(section_name)
+        print("【成功】更新配置数据：最新开始示数值 %s，最新开始日期 %s，即下一次构造数据的起始值，【切记】后续构造数据大于示数最后值" % (last_value, listc[0]))
+        logger.info("【成功】更新配置数据：最新开始示数值 %s，最新开始日期 %s，即下一次构造数据的起始值，【切记】后续构造数据大于示数最后值" % (last_value, listc[0]))

@@ -21,12 +21,24 @@ class ConfRead(object):
     ini_dir_file = '\\' + ini_dir + '\\' + ini_file  # 配置文件路径
     parm_dir_file = '\\' + ini_dir + '\\' + parm_file   # 参数文件路径
 
+    def read_config_table(self, section_name):
+        config = configparser.ConfigParser()
+        file_name = self.base_dir + self.ini_dir_file
+        config.read(file_name, encoding="utf-8")
+        # config.read(file_name)
+        create_table = config.get(section_name, "create_table")
+        create_table2 = config.get(section_name, "create_table2")
+        logger.info("【成功】读取设置参数成功：%s" % (str(create_table)))
+        logger.info("【成功】读取设置参数成功：%s" % (str(create_table2)))
+        return create_table,create_table2
+
     # 1. sql设备相关参数部分
     # 1.1 读取配置文件
     def read_config_value(self, section_name):
         config = configparser.ConfigParser()
         file_name = self.base_dir + self.ini_dir_file
         config.read(file_name, encoding="utf-8")
+        # config.read(file_name)
         date = config.get(section_name, "date")
         te_address = config.get(section_name, "te_address")
         measure_point = config.get(section_name, "measure_point")

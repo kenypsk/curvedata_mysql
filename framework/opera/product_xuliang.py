@@ -1,7 +1,7 @@
 # !/usr/bin/python
 # coding: utf-8
 """
-    主站+配电项目：构造mysql采集【曲线】数据，即可直接插入mysql数据库的sql脚本文件
+    主站+配电项目：构造mysql采集【需量】数据，即可直接插入mysql数据库的sql脚本文件
 """
 import configparser
 import datetime
@@ -13,12 +13,12 @@ from curvedata_mysql.framework.comm.file_opera import FileOpera
 from curvedata_mysql.framework.config.config_read import ConfRead
 from curvedata_mysql.framework.log.logger import Logger
 
-logger = Logger(logger="ProductSql").getlog()
+logger = Logger(logger="ProductXuLiang").getlog()
 conf_read = ConfRead()
 file_opera = FileOpera()
 
 
-class ProductSqlAlarm(object):
+class ProductXuLiang(object):
     # 配置文件读取
     base_dir = os.path.abspath(os.path.join(os.getcwd(), "..\.."))  # 相对跟路径
     ini_dir = "conf"
@@ -40,6 +40,8 @@ class ProductSqlAlarm(object):
             # freezeTime = ""
             gatherType = 1
             curveValue = ""
+            maxValue = ""
+            feilv = ""
 
             # 获取 pk 所需时间
             value = item.rstrip()
@@ -50,11 +52,12 @@ class ProductSqlAlarm(object):
             tmp_time = time.localtime(time_value)
             pk_time = time.strftime("%Y%m%d%H%M%S", tmp_time)
             pk_time_for_long_time = time.strftime("%Y-%m-%d %H:%M:%S", tmp_time)
+            pk_time_for_max_time = time.strftime("%m-%d %H:%M", tmp_time)
             time_array_for_long_time = time.strptime(pk_time_for_long_time, "%Y-%m-%d %H:%M:%S")
 
             gatherTime = pk_time_for_long_time
-            freezeTime = time_value
-
+            freezeTime = time_value  # print(freezeTime)
+            maxTime = pk_time_for_max_time
 
             # # 拼接完整 pk 值
             # pk = pk_time + '_' + list_config[1] + '_' + list_config[2]  # print(pk)
@@ -66,123 +69,44 @@ class ProductSqlAlarm(object):
             minute = int(pk_time[10:12])
             long_time = int(round(time.mktime(time_array_for_long_time) * 1000))  # print(long_time)
             day_second = int(value)   # print(day_second)
+            biao_name = "nowdata" + str(list_config[0])
 
-            biao_name = "curvedata" + str(list_config[0])
+            # =============需量==============
+            # 获取数据 35
+            # 35： 需量（一个时间段一般15分钟的平均功率）；正常范围（真实场景：需量值{变压器额定容量的40%-80%}，最大高峰期某个月超过120%这种）
+            curveValue = random.randrange(100, 150)
+            c35__99 = random.randrange(400, 800)
+            c35__1 = random.randrange(400, 800)
+            c35_1 = random.randrange(400, 800)
+            c35_0 = random.randrange(400, 800)
 
-            # =============系统告警==============
-            # 获取数据 c77 ~ 108
-            # 89-91： A、B、C相电压；正常范围（220左右浮动）
-            #   【低电压】：实测电压 < (电压等级-电压等级的10%)  ，例如220v的电压等级，告警在小于198
-            #   【高电压】：实测电压 > (电压等级+电压等级的7%)   ，例如220v的电压等级，告警在大于235.4
-            c89 = random.randrange(120, 300)
-            c90 = random.randrange(120, 300)
-            c91 = random.randrange(120, 300)
-            # 92-94： A、B、C相电流；正常范围（0.x）
-            #   【三相不平衡】：(I最大-I最小)/I平均*100 > 15
-            c92 = random.randrange(0, 99) / 100
-            c93 = random.randrange(0, 99) / 100
-            c94 = random.randrange(0, 99) / 100
-            # 105-108：总ABC相功率因数；正常范围（0.x）（实际终端上报百分比值0-100，页面需显示0.x，目前接口已处理入库直接储存就是0.x）
-            #   【无功欠补】：功率因数 < 页面显示0.9 (此处是百分比值)
-            c105 = random.randrange(50, 100) / 100
-            # 77-80：总ABC相视在功率；正常范围（0.0xxx）   电压*电流
-            #   【变压器重载】：视在功率 / 额定容量 * 100 > 80  ，例如额度容量200，视在功率：大于160告警
-            #   【变压器过载】：视在功率 > 额定容量             ，例如额度容量200，视在功率：大于200告警
-            c77 = random.randrange(140, 290)
-
-            c78 = round(c89 * c92, 2)
-            c79 = round(c90 * c93, 2)
-            c80 = round(c91 * c94, 2)
-            # 81-84：总ABC相有功功率；正常范围（0.0xxx）  视在功率*90%
-            c81 = round(c89 * c92 * 0.9, 2)
-            c82 = round(c89 * c92 * 0.9, 2)
-            c83 = round(c90 * c93 * 0.9, 2)
-            c84 = round(c91 * c94 * 0.9, 2)
-            # 85-88：总ABC相无功功率；正常范围（0.0xxx）  视在功率*10%
-            c85 = round(c89 * c92 * 0.1, 2)
-            c86 = round(c89 * c92 * 0.1, 2)
-            c87 = round(c90 * c93 * 0.1, 2)
-            c88 = round(c91 * c94 * 0.1, 2)
-            # 95-96： 零序电流/频率；正常范围（？）
-            c95 = random.randrange(5, 10)
-            c96 = random.randrange(45, 55)
-            # 101-104：电能示值；正常范围（增量值，逐渐累加值+）     后一个时间点值≥前一个时间点值
-            c101 = list_config[6] + random.randrange(0, 2)
-            c102 = list_config[6] + random.randrange(0, 1)
-            c103 = list_config[6] + random.randrange(0, 1)
-            c104 = list_config[6] + random.randrange(0, 1)
-            list_config = (list_config[0], list_config[1], list_config[2], list_config[3], list_config[4], list_config[5],
-                          max(c101, c102, c103, c104) + 2)  # 修改配置文件（元组）内（StartValue）的值
-            # 105-108：总ABC相功率因数；正常范围（0.x）（实际终端上报百分比值0-100，页面需显示0.x，目前接口已处理入库直接储存就是0.x）
-            c106 = random.randrange(20, 100) / 100
-            c107 = random.randrange(20, 100) / 100
-            c108 = random.randrange(20, 100) / 100
-
-            types = [77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 101, 102, 103, 104, 105, 106, 107, 108]
+            types = [35]  # 需量项
+            feilvs = [-99, -1, 1, 0]  # 费率
             for type in types:
-                if type == 77:
-                    curveValue = c77
-                elif type == 78:
-                    curveValue = c78
-                elif type == 79:
-                    curveValue = c79
-                elif type == 80:
-                    curveValue = c80
-                elif type == 81:
-                    curveValue = c81
-                elif type == 82:
-                    curveValue = c82
-                elif type == 83:
-                    curveValue = c83
-                elif type == 84:
-                    curveValue = c84
-                elif type == 85:
-                    curveValue = c85
-                elif type == 86:
-                    curveValue = c86
-                elif type == 87:
-                    curveValue = c87
-                elif type == 88:
-                    curveValue = c88
-                elif type == 89:
-                    curveValue = c89
-                elif type == 90:
-                    curveValue = c90
-                elif type == 91:
-                    curveValue = c91
-                elif type == 92:
-                    curveValue = c92
-                elif type == 93:
-                    curveValue = c93
-                elif type == 94:
-                    curveValue = c94
-                elif type == 95:
-                    curveValue = c95
-                elif type == 96:
-                    curveValue = c96
-                elif type == 101:
-                    curveValue = c101
-                elif type == 102:
-                    curveValue = c102
-                elif type == 103:
-                    curveValue = c103
-                elif type == 104:
-                    curveValue = c104
-                elif type == 105:
-                    curveValue = c105
-                elif type == 106:
-                    curveValue = c106
-                elif type == 107:
-                    curveValue = c107
-                elif type == 108:
-                    curveValue = c108
-                str_sql = 'insert into ' + biao_name + '(teNumber, measurePoint, gatherTime, gatherType, type, freezeTime, curveValue, hour) ' \
-                          'VALUES (' + "'" + list_config[1] + "'" + "," + "'" + list_config[2] + "'" + "," + "'" + str(gatherTime) + "'" + "," + "'" + str(gatherType) + "'" + "," + "'" + str(type) + "'" + "," + "'" + str(freezeTime) + "'" + "," + "'" + str(curveValue) + "'" + "," + "'" + str(hour) + "'" + ");"
-                file_result.write(str_sql + '\n')
+                if type == 35:
+                    for fei in feilvs:
+                        if fei == -99:
+                            feilv = -99
+                            maxValue = c35__99
+                        if fei == -1:
+                            feilv = -1
+                            maxValue = c35__1
+                        if fei == 1:
+                            feilv = 1
+                            maxValue = c35_1
+                        if fei == 0:
+                            feilv = 0
+                            maxValue = c35_0
+                        str_sql = 'insert into ' + biao_name + '(teNumber, measurePoint, gatherTime, gatherType, type, freezeTime, curveValue, feilv, max_value, maxTime, hour) ' \
+                                                                              'VALUES (' + "'" + list_config[1] + "'" + "," + "'" + list_config[2] + "'" + "," + "'" + str(
+                            gatherTime) + "'" + "," + "'" + str(gatherType) + "'" + "," + "'" + str(type) + "'" + "," + "'" + str(freezeTime) + "'" + "," + "'" + str(curveValue) \
+                                  + "'" + "," + "'" + str(feilv) + "'" + "," + "'" + str(maxValue) + "'" + "," + "'" + str(maxTime) + "'" + "," + "'" + str(hour) + "'" + ");"
+
+                        file_result.write(str_sql + '\n')
+
         print("【成功】读取构造数据：本次开始示数值 %s，本次开始日期 %s，结束示数值 %s，【切记】后续构造数据大于示数最后值。" % (now_start_value, str(list_config[0]), c101))
         logger.info("【成功】读取构造数据：本次开始示数值 %s，本次开始日期 %s，结束示数值 %s，【切记】后续构造数据大于示数最后值。" % (now_start_value, str(list_config[0]), c101))
-        last_value = c101
-        print(last_value)
+        last_value = 100
         file_result.close()
         logger.info("【成功】最后示数值： %s" % last_value)
         return last_value
@@ -193,6 +117,7 @@ class ProductSqlAlarm(object):
         config = configparser.ConfigParser()
         file_name = self.base_dir + self.ini_dir_file
         config.read(file_name, encoding="utf-8")  # 读取配置文件
+        # config.read(file_name)  # 读取配置文件
         date = config.get(section_name, "date")  # 获取配置文件的值
         # te_address = config.get("dataTypeKH00000140", "te_address")
         # measure_point = config.get("dataTypeKH00000140", "measure_point")
